@@ -10,7 +10,7 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    path: /srv/nfs/nguyenjm   # your MiamiID
+    path:  /srv/nfs/nguyenjm         #your MiamiID
     server: 10.48.10.140
   persistentVolumeReclaimPolicy: Retain
 ---
@@ -32,9 +32,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flask-dev-deployment
-  # Annotation added to indicate static code testing is integrated
-  annotations:
-    static-code-testing: "enabled"
+  labels:
+    app: flask
 spec:
   replicas: 1
   selector:
@@ -47,7 +46,7 @@ spec:
     spec:
       containers:
         - name: flask
-          image: cithit/nguyenjm:latest   # your MiamiID (to be replaced with the appropriate tag via Jenkins)
+          image: cithit/nguyenjm:latest    #your MiamiID
           ports:
             - containerPort: 5000
           volumeMounts:
@@ -69,11 +68,12 @@ spec:
     targetPort: 5000
   selector:
     app: flask
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: flask-dev-ingress
+  name: nginx
 spec:
   rules: 
   - host: 
