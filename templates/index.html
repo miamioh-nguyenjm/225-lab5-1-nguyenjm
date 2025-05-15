@@ -2,22 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Fun Entry Hub</title>
+    <title>Database Table</title>
 </head>
 <body>
-    <h1>Fun Entry Hub</h1>
-    <p>Welcome! Browse entries below, and to add one you'll need to win our game!</p>
-    <a href="{{ url_for('play') }}">Play the Game to Add an Entry</a>
-    <hr>
-    {% if entries %}
-      <h2>All Entries</h2>
-      <ul>
-      {% for entry in entries %}
-          <li>{{ entry['content'] }}</li>
-      {% endfor %}
-      </ul>
-    {% else %}
-      <p>No entries yet. Be the first to add one (by winning the game)!</p>
-    {% endif %}
+    <h1>Database Table Contents</h1>
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>Data</th>
+        </tr>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row[0] }}</td>
+            <td>{{ row[1] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 </html>
