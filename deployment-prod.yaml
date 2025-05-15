@@ -10,7 +10,7 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    path:  /srv/nfs/nguyenjm         #local reference
+    path: /srv/nfs/nguyenjm   # local reference
     server: 10.48.10.140
   persistentVolumeReclaimPolicy: Retain
 ---
@@ -27,11 +27,13 @@ spec:
   selector:
     matchLabels:
       type: nfs
----      
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: flask-prod-deployment
+  annotations:
+    static-code-testing: "enabled"
   labels:
     app: flask
 spec:
@@ -46,7 +48,7 @@ spec:
     spec:
       containers:
         - name: flask
-          image: cithit/nguyenjm
+          image: cithit/nguyenjm:latest   # your MiamiID (to be updated with Jenkins-built tag)
           ports:
             - containerPort: 5000
           volumeMounts:
@@ -63,10 +65,27 @@ metadata:
   name: flask-prod-service
 spec:
   type: LoadBalancer 
-  loadBalancerIP: 10.48.10.191                                    
+  loadBalancerIP: 10.48.10.191   # change as needed
   ports:
   - protocol: TCP
     port: 80
     targetPort: 5000
   selector:
     app: flask
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: flask-prod-ingress
+spec:
+  rules: 
+  - host: 
+    http:
+      paths:
+      - path: /
+        pathType: ImplementationSpecific
+        backend: 
+          service:
+            name: flask-prod-service
+            port:
+              number: 80
