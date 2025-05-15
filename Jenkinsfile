@@ -2,33 +2,28 @@ pipeline {
     agent any 
 
     environment {
-        DOCKER_CREDENTIALS_ID = 'roseaw-dockerhub'
-        DOCKER_IMAGE = 'cithit/nguyenjm'
+        DOCKER_CREDENTIALS_ID = 'roseaw-dockerhub'  
+        DOCKER_IMAGE = 'cithit/nguyenjm'                                   //<-----change this to your MiamiID!
         IMAGE_TAG = "build-${BUILD_NUMBER}"
-        // (Make sure your GITHUB_URL points to your repository)
-        GITHUB_URL = 'https://github.com/miamioh-nguyenjm/225-lab5-1-nguyenjm'
-        KUBECONFIG = credentials('nguyenjm-225')
+        GITHUB_URL = 'https://github.com/miamioh-nguyenjm/225-lab4-2-nguyenjm'     //<-----change this to match this new repository!
+        KUBECONFIG = credentials('nguyenjm-225')                           //<-----change this to match your kubernetes credentials (MiamiID-225)! 
     }
 
     stages {
-        stage('Checkout') {
+        stage('Code Checkout') {
             steps {
                 cleanWs()
                 checkout([$class: 'GitSCM', branches: [[name: '*/main']],
                           userRemoteConfigs: [[url: "${GITHUB_URL}"]]])
             }
         }
-        
-        // --- New Stage for Static Code Testing ---
-        stage('Lint HTML') {
+
+          stage('Lint HTML') {
             steps {
-                // Installing HTMLHint and linting all HTML files in the templates folder.
-                // (If your HTML files exist elsewhere, adjust the path accordingly.)
                 sh 'npm install htmlhint --save-dev'
-                sh 'npx htmlhint templates/*.html'
+                sh 'npx htmlhint *.html'
             }
         }
-        // -----------------------------------------
 
         stage('Build Docker Image') {
             steps {
@@ -51,13 +46,28 @@ pipeline {
         stage('Deploy to Dev Environment') {
             steps {
                 script {
+                    // This sets up the Kubernetes configuration using the specified KUBECONFIG
                     def kubeConfig = readFile(KUBECONFIG)
-                    // Update image tag within deployment-dev.yaml accordingly.
+                    sh "kubectl delete --all deployments --namespace=default"
+                    // This updates the deployment-dev.yaml to use the new image tag
                     sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-dev.yaml"
                     sh "kubectl apply -f deployment-dev.yaml"
                 }
             }
         }
+
+        stage('Generate Test Data') {
+            steps {
+                script {
+                // Ensure the label accurately targets the correct pods.
+                def appPod = sh(script: "kubectl get pods -l app=flask -o jsonpath='{.items[0].metadata.name}'", returnStdout: true).trim()
+                // Execute command within the pod. 
+                sh "kubectl get pods"
+                sh "sleep 15"
+                sh "kubectl exec ${appPod} -- python3 data-gen.py"
+                }
+            }
+    }
 
         stage("Run Acceptance Tests") {
             steps {
@@ -70,28 +80,16 @@ pipeline {
             }
         }
         
-        stage("Run Security Checks") {
-            steps {
-                sh 'docker pull public.ecr.aws/portswigger/dastardly:latest'
-                sh '''
-                    docker run --user $(id -u) -v ${WORKSPACE}:${WORKSPACE}:rw \
-                    -e BURP_START_URL=http://10.48.10.120 \
-                    -e BURP_REPORT_FILE_PATH=${WORKSPACE}/dastardly-report.xml \
-                    public.ecr.aws/portswigger/dastardly:latest
-                '''
-            }
-        }
-        
-        stage('Deploy to Prod Environment') {
+        stage('Remove Test Data') {
             steps {
                 script {
-                    sh "sed -i 's|${DOCKER_IMAGE}:latest|${DOCKER_IMAGE}:${IMAGE_TAG}|' deployment-prod.yaml"
-                    sh "cd .."
-                    sh "kubectl apply -f deployment-prod.yaml"
+                    // Run the python script to generate data to add to the database
+                    def appPod = sh(script: "kubectl get pods -l app=flask -o jsonpath='{.items[0].metadata.name}'", returnStdout: true).trim()
+                    sh "kubectl exec ${appPod} -- python3 data-clear.py"
                 }
             }
         }
-        
+         
         stage('Check Kubernetes Cluster') {
             steps {
                 script {
@@ -100,19 +98,17 @@ pipeline {
             }
         }
     }
-    
+
     post {
-        always {
-            junit testResults: 'dastardly-report.xml', skipPublishingChecks: true
-        }
+
         success {
             slackSend color: "good", message: "Build Completed: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
         }
         unstable {
-            slackSend color: "warning", message: "Build Unstable: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+            slackSend color: "warning", message: "Build Completed: ${env.JOB_NAME} ${env.BUILD_NUMBER} ':pensive:'"
         }
         failure {
-            slackSend color: "danger", message: "Build Failed: ${env.JOB_NAME} ${env.BUILD_NUMBER}"
+            slackSend color: "danger", message: "Build Completed: ${env.JOB_NAME} ${env.BUILD_NUMBER} ':weary:'"
         }
     }
 }
