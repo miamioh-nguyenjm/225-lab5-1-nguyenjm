@@ -25,11 +25,6 @@ pipeline {
             }
         }
 
-        stage('I HATE MY LIFE WORK PLEASE') {
-            steps {
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 script {
