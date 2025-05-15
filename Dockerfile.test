@@ -9,7 +9,7 @@ COPY . .
 
 # Install Python dependencies from requirements.txt
 # Ensure it includes selenium
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements2.txt
 
 # Install system dependencies required for Firefox and GeckoDriver
 RUN apt-get update && apt-get install -y \
