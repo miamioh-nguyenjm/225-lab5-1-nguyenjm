@@ -29,7 +29,7 @@ def init_db():
 @app.route('/', methods=['GET', 'POST'])
 def index():
     message = ''
-    # Handle form submission for manual entries
+    # handle form submission for manual entries
     if request.method == 'POST':
         if request.form.get('action') == 'delete':
             contact_id = request.form.get('contact_id')
@@ -47,13 +47,13 @@ def index():
                 message = 'Contact added successfully.'
             else:
                 message = 'Missing name or phone number.'
-    # Check if a message was passed as a query parameter (used after generating a random person)
+    # check if a message was passed as a query parameter (used after generating a random person)
     if not message:
         message = request.args.get('message', '')
     
     db = get_db()
     contacts = db.execute('SELECT * FROM contacts').fetchall()
-    # The page now includes a new button that points to the '/generate' route.
+    # the page now includes a new button that points to the '/generate' route.
     return render_template_string('''
         <!DOCTYPE html>
         <html>
@@ -95,7 +95,6 @@ def index():
                 <p>No contacts found.</p>
             {% endif %}
             <br>
-            <!-- New button: Clicking this calls the new API to generate a random person -->
             <a href="{{ url_for('generate_random_person') }}">
                 <button type="button">Generate Random Person</button>
             </a>
@@ -105,28 +104,28 @@ def index():
 
 @app.route('/generate', methods=['GET'])
 def generate_random_person():
-    # Call the randomuser.me API to get a random fake person
+    # call the randomuser.me API to get a random fake person
     response = requests.get("https://randomuser.me/api/")
     if response.status_code == 200:
         data = response.json()
         user = data["results"][0]
-        # Construct full name from first and last
+        # construct full name from first and last
         first_name = user["name"]["first"]
         last_name = user["name"]["last"]
         name = f"{first_name} {last_name}"
-        # Use the 'phone' field from the API response (or default to N/A)
+        # use the 'phone' field from the API response (or default to N/A)
         phone = user.get("phone", "N/A")
-        # Insert the generated random person into the contacts table
+        # insert the generated random person into the contacts table
         db = get_db()
         db.execute("INSERT INTO contacts (name, phone) VALUES (?, ?)", (name, phone))
         db.commit()
         message = f"Random person ({name}) added successfully!"
     else:
         message = "Failed to retrieve random person data."
-    # Redirect back to index with a message
+    # redirect back to index with a message
     return redirect(url_for('index', message=message))
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    init_db()  # Initialize the contacts table in demo.db
+    init_db()  # initialize the contacts table in demo.db
     app.run(debug=True, host='0.0.0.0', port=port)

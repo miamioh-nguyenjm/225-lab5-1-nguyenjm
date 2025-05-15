@@ -1,2 +1,2 @@
 flask
-requests
+requests # for random user generation via randomuser.me API
