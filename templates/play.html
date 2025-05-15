@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Play the Game</title>
+</head>
+<body>
+    <h1>Welcome to the Challenge!</h1>
+    <p>Guess the secret number between 1 and 3 to earn the right to add a new entry.</p>
+    {% if message %}
+      <p style="color:red;">{{ message }}</p>
+    {% endif %}
+    <form method="POST" action="{{ url_for('guess') }}">
+        <input type="text" name="guess" placeholder="Enter your guess" required>
+        <input type="submit" value="Submit Guess">
+    </form>
+    <br>
+    <a href="{{ url_for('index') }}">Back to Home</a>
+</body>
+</html>
